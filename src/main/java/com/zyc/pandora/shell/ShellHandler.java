@@ -45,8 +45,8 @@ public class ShellHandler {
                         "logpath=$path/run.log\n" +
                         "echo $path\n" +
                         "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\")print $2}')\n" +
-                        "if [ ! -n \"$kid\" ]; then\n" +
-                        "kill -9 $(kid)\n" +
+                        "if [ -n $kid ]; then\n" +
+                        "kill -9 $kid\n" +
                         "fi\n" +
                         "rm -rf $path\n" +
                         "git clone -b $branch $url $path\n" +
@@ -79,9 +79,9 @@ public class ShellHandler {
                 while ((line = inputStream.readLine()) != null) {
                     raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
                     raf.seek(seek);
+                    log.info(line);
                     line += "\n\r";
                     raf.write(line.getBytes(),0,line.getBytes().length);
-                    log.info(line);
                     seek+=line.getBytes().length;
                     raf.close();
                 }
