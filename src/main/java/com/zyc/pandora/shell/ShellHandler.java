@@ -28,6 +28,8 @@ public class ShellHandler {
 
     @Value("${project.path}")
     private String projectPath;
+    @Value("${project.log.buffer}")
+    private Integer projectLogBuffer;
 
 
     public File createRunShellFile(String fileName, String url, String project, String branch) throws IOException {
@@ -37,15 +39,17 @@ public class ShellHandler {
             Files.createDirectories(appPath);
         }
         String shell =
-                String.format("set -e \n" +
+                String.format(
+                        "#!/bin/bash\n" +
+                        "set -e \n" +
                         "branch=%s \n" +
                         "url=%s \n" +
                         "app=%s \n" +
                         "path=%s \n" +
                         "logpath=$path/run.log\n" +
                         "echo $path\n" +
-                        "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\")print $2}')\n" +
-                        "if [ -n $kid ]; then\n" +
+                        "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\"&&$0!~\".sh\")print $2}')\n" +
+                        "if [ \"$kid\" ]; then\n" +
                         "kill -9 $kid\n" +
                         "fi\n" +
                         "rm -rf $path\n" +
@@ -69,32 +73,39 @@ public class ShellHandler {
     public void runShell(File shell, String project) throws IOException {
         Runtime.getRuntime().exec(String.format("chmod 777 %s", shell.getAbsolutePath()));
         CompletableFuture.supplyAsync(() -> {
-            RandomAccessFile raf = null;
+            RandomAccessFile raf;
             Long seek = 0L;
             try {
-                Process process = Runtime.getRuntime().exec(String.format("sh %s", shell.getAbsolutePath()));
+                Process process = Runtime.getRuntime().exec(String.format("%s", shell.getAbsolutePath()));
                 BufferedReader inputStream;
                 inputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
+                StringBuilder lines = new StringBuilder();
+                Integer lineCount = 0;
                 while ((line = inputStream.readLine()) != null) {
-                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
-                    raf.seek(seek);
                     log.info(line);
-                    line += "\n\r";
-                    raf.write(line.getBytes(),0,line.getBytes().length);
-                    seek+=line.getBytes().length;
-                    raf.close();
+                    lines.append(line).append("\n\r");
+                    lineCount++;
+                    if(lineCount%projectLogBuffer==0){
+                        raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
+                        raf.seek(seek);
+                        raf.write(lines.toString().getBytes(),0,lines.toString().getBytes().length);
+                        seek+=lines.toString().getBytes().length;
+                        raf.close();
+                        lines.setLength(0);
+                    }
                 }
+                int result =  process.waitFor();
+                System.out.println("========"+result);
                 String end = "应用构建成功 应用启动中。。。";
                 raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
                 raf.write(end.getBytes(),0,end.getBytes().length);
                 raf.close();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
             return true;
         });
-        log.info("调用脚本成功");
     }
 
     public RangeLog readLog(LogParam logParam){
