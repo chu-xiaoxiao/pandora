@@ -1,5 +1,7 @@
 package com.zyc.pandora.api;
 
+import com.zyc.pandora.domain.dto.LogParam;
+import com.zyc.pandora.domain.dto.RangeLog;
 import com.zyc.pandora.domain.dto.StartRequestParam;
 import com.zyc.pandora.domain.vo.CommonResponse;
 import com.zyc.pandora.shell.ShellHandler;
@@ -8,11 +10,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.ws.Response;
 import java.io.*;
-import java.util.Map;
 
 /**
  * @author : zhangyuchen
@@ -25,37 +24,25 @@ public class CommandController {
 
     @Resource
     private HttpServletResponse response;
+    @Resource
+    private ShellHandler shellHandler;
 
     @RequestMapping(value = "/deploy",method = RequestMethod.POST)
-    public void start(@RequestBody StartRequestParam startRequestParam){
+    public CommonResponse start(@RequestBody StartRequestParam startRequestParam){
+        String fileName = "runShell.sh";
         try {
-            String fileName = "runShell.sh";
-            Map map = System.getenv();
-            ShellHandler.createRunShellFile(fileName,startRequestParam.getUrl(),startRequestParam.getProject(),startRequestParam.getBranch());
-            Runtime.getRuntime().exec("chmod 777 ./"+fileName);
-            Process process = Runtime.getRuntime().exec("sh ./"+fileName);
-            int exitValue = process.waitFor();
-            if (0 != exitValue) {
-                log.error("call shell failed. error code is :" + exitValue);
-            }
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            OutputStream outputStream = response.getOutputStream();
-            String line;
-            while((line=inputStream.readLine())!=null){
-                ((ServletOutputStream) outputStream).println(line+"<br/>");
-                log.info(line);
-                outputStream.flush();
-            }
-            log.info("发布成功");
+            File runShellFile  =  shellHandler.createRunShellFile(fileName,startRequestParam.getUrl(),startRequestParam.getProject(),startRequestParam.getBranch());
+            shellHandler.runShell(runShellFile,startRequestParam.getProject());
+            return  CommonResponse.Builder.SUCC().initSuccMsg("启动脚本执行成功");
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+        return  CommonResponse.Builder.FAIL().initErrMsg("启动脚本执行失败");
     }
 
-    @RequestMapping(value = "/log",method = RequestMethod.POST)
-    public void log(@RequestBody StartRequestParam startRequestParam){
-
+    @RequestMapping(value = "/log",method = RequestMethod.GET)
+    public CommonResponse log(LogParam logParam){
+        RangeLog result = shellHandler.readLog(logParam);
+        return CommonResponse.Builder.SUCC().initSuccData(result);
     }
 }
