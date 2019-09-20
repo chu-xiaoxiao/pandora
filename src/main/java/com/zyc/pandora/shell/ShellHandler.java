@@ -88,6 +88,7 @@ public class ShellHandler {
                 String end = "应用构建成功 应用启动中。。。";
                 raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
                 raf.write(end.getBytes(),0,end.getBytes().length);
+                raf.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
