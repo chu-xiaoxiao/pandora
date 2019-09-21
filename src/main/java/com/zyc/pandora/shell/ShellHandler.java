@@ -41,25 +41,29 @@ public class ShellHandler {
         String shell =
                 String.format(
                         "#!/bin/bash\n" +
-                        "set -e \n" +
-                        "branch=%s \n" +
-                        "url=%s \n" +
-                        "app=%s \n" +
-                        "path=%s \n" +
-                        "logpath=$path/run.log\n" +
-                        "echo $path\n" +
-                        "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\"&&$0!~\".sh\")print $2}')\n" +
-                        "if [ \"$kid\" ]; then\n" +
-                        "kill -9 $kid\n" +
-                        "fi\n" +
-                        "rm -rf $path\n" +
-                        "git clone -b $branch $url $path\n" +
-                        "cd $path/$app\n" +
-                        "mvn compile\n" +
-                        "mvn install\n" +
-                        "mvn package\n" +
-                        "cd target\n" +
-                        "nohup java -jar *.jar >>$logpath 2>&1 &", branch, url, project, appPath.toRealPath(), project);
+                                "set -e \n" +
+                                "branch=%s \n" +
+                                "url=%s \n" +
+                                "app=%s \n" +
+                                "path=%s \n" +
+                                "logpath=$path/run.log\n" +
+                                "echo 项目部署主路径$path\n" +
+                                "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\"&&$0!~\".sh\")print $2}')\n" +
+                                "if [ \"$kid\" ]; then\n" +
+                                "echo 存在已发布进程 \n" +
+                                "kill -9 $kid\n" +
+                                "echo kill执行成功 \n" +
+                                "fi\n" +
+                                "rm -rf $path\n" +
+                                "echo 从远端仓库克隆代码中 克隆时间取决与网络 \n" +
+                                "git clone -b $branch $url $path\n" +
+                                "echo 克隆成功切换路径 \n" +
+                                "cd $path/$app\n" +
+                                "mvn compile\n" +
+                                "mvn install\n" +
+                                "mvn package\n" +
+                                "cd target\n" +
+                                "nohup java -jar *.jar >>$logpath 2>&1 &", branch, url, project, appPath.toRealPath(), project);
         Path shellPath = Paths.get(String.format("%s/%s_runShell.sh", projectPath, project));
         File shellFile = shellPath.toFile();
         shellFile.deleteOnExit();
@@ -86,31 +90,41 @@ public class ShellHandler {
                     log.info(line);
                     lines.append(line).append("\n\r");
                     lineCount++;
-                    if(lineCount%projectLogBuffer==0){
-                        raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
+                    if (lineCount % projectLogBuffer == 0) {
+                        raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
                         raf.seek(seek);
-                        raf.write(lines.toString().getBytes(),0,lines.toString().getBytes().length);
-                        seek+=lines.toString().getBytes().length;
+                        raf.write(lines.toString().getBytes(), 0, lines.toString().getBytes().length);
+                        seek += lines.toString().getBytes().length;
                         raf.close();
                         lines.setLength(0);
                     }
                 }
-                if(lines.length()>0){
-                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
+                if (lines.length() > 0) {
+                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
                     raf.seek(seek);
-                    raf.write(lines.toString().getBytes(),0,lines.toString().getBytes().length);
+                    raf.write(lines.toString().getBytes(), 0, lines.toString().getBytes().length);
                     raf.close();
                     lines.setLength(0);
                 }
-            } catch (IOException e) {
+                int result = process.waitFor();
+                if(result!=0){
+                    String errLine = "脚本执行异常 错误码"+result;
+                    log.warn(errLine);
+                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
+                    raf.seek(seek);
+                    raf.write(errLine.getBytes(), 0, errLine.getBytes().length);
+                    raf.close();
+                    lines.setLength(0);
+                }
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
             return true;
         });
     }
 
-    public RangeLog readLog(LogParam logParam){
-        Path logPath = Paths.get(String.format("/%s/%s/%s.log", projectPath,logParam.getProject(),logParam.getType()));
+    public RangeLog readLog(LogParam logParam) {
+        Path logPath = Paths.get(String.format("/%s/%s/%s.log", projectPath, logParam.getProject(), logParam.getType()));
         RandomAccessFile raf = null;
         RangeLog result = new RangeLog();
         try {
@@ -118,9 +132,9 @@ public class ShellHandler {
             raf.seek(logParam.getOffset());
             String line;
             StringBuilder log = new StringBuilder();
-            while((line=raf.readLine())!=null){
+            while ((line = raf.readLine()) != null) {
                 log.append(line).append("<br/>");
-                if(line.contains("应用构建成功")){
+                if (line.contains("应用构建成功")) {
                     result.setOver(true);
                 }
             }
@@ -128,9 +142,9 @@ public class ShellHandler {
             result.setOffset(raf.getFilePointer());
         } catch (IOException e) {
             log.warn(e.getMessage());
-        }finally {
+        } finally {
             try {
-                if(raf!=null){
+                if (raf != null) {
                     raf.close();
                 }
             } catch (IOException e) {

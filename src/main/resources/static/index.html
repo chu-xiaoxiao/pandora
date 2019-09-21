@@ -20,11 +20,10 @@
                     <el-input v-model="startRequestParam.project"></el-input>
                 </el-form-item>
                 <el-button type="primary" @click="deploy">发布</el-button>
-                <el-button type="primary" @click="startLog">日志</el-button>
             </el-form>
         </el-col>
         <el-col :span="10">
-            <div v-html="log" id="logDiv" style=" overflow-y:auto; overflow-x:auto; width:500px; height:600px;"></div>
+            <div v-html="log" id="logDiv" style=" overflow-y:auto; overflow-x:auto; height:600px;"></div>
         </el-col>
     </el-row>
     https://github.com/xiaomaolvsang/copyrightMall
