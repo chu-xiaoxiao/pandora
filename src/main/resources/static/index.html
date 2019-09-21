@@ -7,21 +7,28 @@
 </head>
 <body>
 <div id="app">
+    <el-row :gutter="20">
+        <el-col :span="10">
+            <el-form label-width="80px" :model="startRequestParam">
+                <el-form-item label="项目地址">
+                    <el-input v-model="startRequestParam.url"></el-input>
+                </el-form-item>
+                <el-form-item label="分支">
+                    <el-input v-model="startRequestParam.branch"></el-input>
+                </el-form-item>
+                <el-form-item label="应用">
+                    <el-input v-model="startRequestParam.project"></el-input>
+                </el-form-item>
+                <el-button type="primary" @click="deploy">发布</el-button>
+                <el-button type="primary" @click="startLog">日志</el-button>
+            </el-form>
+        </el-col>
+        <el-col :span="10">
+            <div v-html="log" id="logDiv" style=" overflow-y:auto; overflow-x:auto; width:500px; height:600px;"></div>
+        </el-col>
+    </el-row>
     https://github.com/xiaomaolvsang/copyrightMall
-    <el-form label-width="80px" :model="startRequestParam">
-        <el-form-item label="项目地址">
-            <el-input v-model="startRequestParam.url"></el-input>
-        </el-form-item>
-        <el-form-item label="分支">
-            <el-input v-model="startRequestParam.branch"></el-input>
-        </el-form-item>
-        <el-form-item label="应用">
-            <el-input v-model="startRequestParam.project"></el-input>
-        </el-form-item>
-        <el-button type="primary" @click="deploy">发布</el-button>
-        <el-button type="primary" @click="startLog">日志</el-button>
-    </el-form>
-    <div v-html="log" id ="logDiv" style=" overflow-y:auto; overflow-x:auto; width:500px; height:600px;"></div>
+
 </div>
 </body>
 <!-- import Vue before Element -->
@@ -89,15 +96,15 @@
                 axios.get('/log', {params: that.logParam})
                     .then(function c(response) {
                         that.log += response.data.data.data;
-                        if(response.data.data.offset==undefined||response.data.data.offset<0) {
+                        if (response.data.data.offset == undefined || response.data.data.offset < 0) {
                             that.logParam.offset = 0;
-                        }else {
+                        } else {
                             that.logParam.offset = response.data.data.offset;
                             var div = document.getElementById('logDiv');
-                            console.log( div.scrollTop, div.scrollHeight);
+                            console.log(div.scrollTop, div.scrollHeight);
                             div.scrollTop = div.scrollHeight;
                         }
-                        if(response.data.data.over==true){
+                        if (response.data.data.over == true) {
                             clearInterval(that.timer);
                         }
                     })

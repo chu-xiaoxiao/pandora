@@ -95,13 +95,14 @@ public class ShellHandler {
                         lines.setLength(0);
                     }
                 }
-                int result =  process.waitFor();
-                System.out.println("========"+result);
-                String end = "应用构建成功 应用启动中。。。";
-                raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
-                raf.write(end.getBytes(),0,end.getBytes().length);
-                raf.close();
-            } catch (IOException | InterruptedException e) {
+                if(lines.length()>0){
+                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project )).toFile(), "rw");
+                    raf.seek(seek);
+                    raf.write(lines.toString().getBytes(),0,lines.toString().getBytes().length);
+                    raf.close();
+                    lines.setLength(0);
+                }
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return true;
