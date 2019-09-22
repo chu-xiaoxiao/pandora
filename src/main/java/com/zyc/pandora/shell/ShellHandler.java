@@ -35,7 +35,7 @@ public class ShellHandler {
     }
 
     public File createShellFile(String fileName, String workPath, ShellEnum shellEnum, JSONObject param) throws IOException {
-        Path appPath = Paths.get(String.format("/%s/%s", projectPath, workPath));
+        Path appPath = Paths.get(String.format("/%s/%s/", projectPath, workPath));
         File appDir = appPath.toFile();
         if (!appDir.exists()) {
             Files.createDirectories(appPath);
