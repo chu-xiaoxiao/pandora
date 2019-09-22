@@ -33,7 +33,7 @@ public enum ShellEnum {
                                     "echo 从远端仓库克隆代码中 克隆时间取决与网络 \n" +
                                     "git clone -b $branch $url $path\n" +
                                     "echo 克隆成功切换路径 \n" +
-                                    "cd $path/$app\n" +
+                                    "cd $path\n" +
                                     "mvn compile\n" +
                                     "mvn install\n" +
                                     "mvn package\n" +
