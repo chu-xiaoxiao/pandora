@@ -45,7 +45,7 @@ public class ShellHandler {
         shellFile.deleteOnExit();
         param.put("projectPath",projectPath);
         param.put("workPath",workPath);
-        param.put("shellPath",String.format("%s%s",projectPath,workPath));
+        param.put("shellPath",String.format("%s/%s",projectPath,workPath));
         if (shellFile.createNewFile()) {
             Files.write(Paths.get(shellFile.toURI()), shellEnum.create(param).getBytes(), StandardOpenOption.WRITE);
         }
