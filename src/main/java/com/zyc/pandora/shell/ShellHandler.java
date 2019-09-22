@@ -3,6 +3,7 @@ package com.zyc.pandora.shell;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.pandora.domain.dto.LogParam;
 import com.zyc.pandora.domain.dto.RangeLog;
+import com.zyc.pandora.shell.dto.LogFile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -28,9 +28,9 @@ public class ShellHandler {
     @Value("${project.path}")
     private String projectPath;
     @Value("${project.log.buffer}")
-    private Integer projectLogBuffer;
+    private Integer logBuffer;
 
-    public List<String> getProjectBranch(String url){
+    public List<String> getProjectBranch(String url) {
         return null;
     }
 
@@ -40,12 +40,16 @@ public class ShellHandler {
         if (!appDir.exists()) {
             Files.createDirectories(appPath);
         }
-        Path shellPath = Paths.get(String.format("%s/%s_%s.sh", projectPath, workPath,fileName));
+        Path shellPath = Paths.get(String.format("%s/%s_%s.sh", projectPath, workPath, fileName));
         File shellFile = shellPath.toFile();
         shellFile.deleteOnExit();
-        param.put("projectPath",projectPath);
-        param.put("workPath",workPath);
-        param.put("shellPath",String.format("%s/%s",projectPath,workPath));
+        param.put("projectPath", projectPath);
+        param.put("workPath", String.format("%s/%s", projectPath, workPath));
+        if(param.getBoolean("rootProject")){
+            param.put("pomPath", String.format("%s/%s", projectPath,param.getString("project")));
+        }else{
+            param.put("pomPath", String.format("%s/%s/%s", projectPath,param.getString("project"), workPath));
+        }
         if (shellFile.createNewFile()) {
             Files.write(Paths.get(shellFile.toURI()), shellEnum.create(param).getBytes(), StandardOpenOption.WRITE);
         }
@@ -56,33 +60,18 @@ public class ShellHandler {
     public void runShell(File shell, String project) throws IOException {
         Runtime.getRuntime().exec(String.format("chmod 777 %s", shell.getAbsolutePath()));
         CompletableFuture.supplyAsync(() -> {
-            Long seek = 0L;
             try {
+                LogFile logFile = new LogFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)));
                 Process process = Runtime.getRuntime().exec(String.format("%s", shell.getAbsolutePath()));
-                BufferedReader inputStream;
-                inputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                StringBuilder lines = new StringBuilder();
-                Integer lineCount = 0;
-                while ((line = inputStream.readLine()) != null) {
-                    log.info(line);
-                    lines.append(line).append("\n\r");
-                    lineCount++;
-                    if (lineCount % projectLogBuffer == 0) {
-                        seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
-                        lines.setLength(0);
-                    }
-                }
-                if (lines.length() > 0) {
-                    seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
-                    lines.setLength(0);
-                }
+                logFile.appendInputStream(process.getInputStream(),logBuffer);
+                logFile.appendInputStream(process.getErrorStream(),logBuffer);
                 int result = process.waitFor();
-                if(result!=0){
-                    String errLine = "脚本执行异常 错误码"+result;
+                if (result != 0) {
+                    String errLine = "脚本执行异常 错误码" + result+"\n\r";
                     log.warn(errLine);
-                    seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
-                    lines.setLength(0);
+                    logFile.appendLine(errLine);
+                }else{
+                    logFile.appendLine("\n\r项目部署成功");
                 }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
@@ -123,12 +112,4 @@ public class ShellHandler {
     }
 
 
-    public Long writeLine(Path path,Long seek,String line) throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(path.toFile(), "rw");
-        raf.seek(seek);
-        raf.write(line.getBytes(), 0, line.getBytes().length);
-        seek += line.getBytes().length;
-        raf.close();
-        return seek;
-    }
 }

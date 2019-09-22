@@ -11,4 +11,5 @@ public class StartRequestParam {
     private String url;
     private String branch;
     private String project;
+    private boolean rootProject;
 }

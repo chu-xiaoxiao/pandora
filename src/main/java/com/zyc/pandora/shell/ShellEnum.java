@@ -20,7 +20,7 @@ public enum ShellEnum {
                                     "branch=#{branch} \n" +
                                     "url=#{url} \n" +
                                     "app=#{project} \n" +
-                                    "path=#{shellPath} \n" +
+                                    "path=#{workPath} \n" +
                                     "logpath=$path/run.log\n" +
                                     "echo 项目部署主路径$path\n" +
                                     "kid=$(ps -ef | awk '{if($0~\"#{project}\"&&$0!~\"awk\"&&$0!~\".sh\")print $2}')\n" +
@@ -33,7 +33,7 @@ public enum ShellEnum {
                                     "echo 从远端仓库克隆代码中 克隆时间取决与网络 \n" +
                                     "git clone -b $branch $url $path\n" +
                                     "echo 克隆成功切换路径 \n" +
-                                    "cd $path\n" +
+                                    "cd #{pomPath}\n" +
                                     "mvn compile\n" +
                                     "mvn install\n" +
                                     "mvn package\n" +

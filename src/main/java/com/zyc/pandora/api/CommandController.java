@@ -9,12 +9,15 @@ import com.zyc.pandora.shell.ShellEnum;
 import com.zyc.pandora.shell.ShellHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author : zhangyuchen
@@ -32,9 +35,8 @@ public class CommandController {
 
     @RequestMapping(value = "/deploy",method = RequestMethod.POST)
     public CommonResponse start(@RequestBody StartRequestParam startRequestParam){
-        String fileName = "runShell";
         try {
-            File runShellFile  =  shellHandler.createShellFile(fileName, startRequestParam.getProject(),ShellEnum.runShell, JSONObject.parseObject(JSONObject.toJSONString(startRequestParam)));
+            File runShellFile  =  shellHandler.createShellFile("runShell", startRequestParam.getProject(),ShellEnum.runShell, JSONObject.parseObject(JSONObject.toJSONString(startRequestParam)));
             shellHandler.runShell(runShellFile,startRequestParam.getProject());
             return  CommonResponse.Builder.SUCC().initSuccMsg("启动脚本执行成功");
         } catch (IOException e) {
