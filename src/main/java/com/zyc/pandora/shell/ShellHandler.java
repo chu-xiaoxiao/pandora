@@ -1,21 +1,20 @@
 package com.zyc.pandora.shell;
 
+import com.alibaba.fastjson.JSONObject;
 import com.zyc.pandora.domain.dto.LogParam;
 import com.zyc.pandora.domain.dto.RangeLog;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -31,44 +30,24 @@ public class ShellHandler {
     @Value("${project.log.buffer}")
     private Integer projectLogBuffer;
 
+    public List<String> getProjectBranch(String url){
+        return null;
+    }
 
-    public File createRunShellFile(String fileName, String url, String project, String branch) throws IOException {
-        Path appPath = Paths.get(String.format("/%s/%s", projectPath, project));
+    public File createShellFile(String fileName, String workPath, ShellEnum shellEnum, JSONObject param) throws IOException {
+        Path appPath = Paths.get(String.format("/%s/%s", projectPath, workPath));
         File appDir = appPath.toFile();
         if (!appDir.exists()) {
             Files.createDirectories(appPath);
         }
-        String shell =
-                String.format(
-                        "#!/bin/bash\n" +
-                                "set -e \n" +
-                                "branch=%s \n" +
-                                "url=%s \n" +
-                                "app=%s \n" +
-                                "path=%s \n" +
-                                "logpath=$path/run.log\n" +
-                                "echo 项目部署主路径$path\n" +
-                                "kid=$(ps -ef | awk '{if($0~\"%s\"&&$0!~\"awk\"&&$0!~\".sh\")print $2}')\n" +
-                                "if [ \"$kid\" ]; then\n" +
-                                "echo 存在已发布进程 \n" +
-                                "kill -9 $kid\n" +
-                                "echo kill执行成功 \n" +
-                                "fi\n" +
-                                "rm -rf $path\n" +
-                                "echo 从远端仓库克隆代码中 克隆时间取决与网络 \n" +
-                                "git clone -b $branch $url $path\n" +
-                                "echo 克隆成功切换路径 \n" +
-                                "cd $path/$app\n" +
-                                "mvn compile\n" +
-                                "mvn install\n" +
-                                "mvn package\n" +
-                                "cd target\n" +
-                                "nohup java -jar *.jar >>$logpath 2>&1 &", branch, url, project, appPath.toRealPath(), project);
-        Path shellPath = Paths.get(String.format("%s/%s_runShell.sh", projectPath, project));
+        Path shellPath = Paths.get(String.format("%s/%s_%s.sh", projectPath, workPath,fileName));
         File shellFile = shellPath.toFile();
         shellFile.deleteOnExit();
+        param.put("projectPath",projectPath);
+        param.put("workPath",workPath);
+        param.put("shellPath",String.format("%s%s",projectPath,workPath));
         if (shellFile.createNewFile()) {
-            Files.write(Paths.get(shellFile.toURI()), shell.getBytes(), StandardOpenOption.WRITE);
+            Files.write(Paths.get(shellFile.toURI()), shellEnum.create(param).getBytes(), StandardOpenOption.WRITE);
         }
         return shellFile;
     }
@@ -77,7 +56,6 @@ public class ShellHandler {
     public void runShell(File shell, String project) throws IOException {
         Runtime.getRuntime().exec(String.format("chmod 777 %s", shell.getAbsolutePath()));
         CompletableFuture.supplyAsync(() -> {
-            RandomAccessFile raf;
             Long seek = 0L;
             try {
                 Process process = Runtime.getRuntime().exec(String.format("%s", shell.getAbsolutePath()));
@@ -91,29 +69,19 @@ public class ShellHandler {
                     lines.append(line).append("\n\r");
                     lineCount++;
                     if (lineCount % projectLogBuffer == 0) {
-                        raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
-                        raf.seek(seek);
-                        raf.write(lines.toString().getBytes(), 0, lines.toString().getBytes().length);
-                        seek += lines.toString().getBytes().length;
-                        raf.close();
+                        seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
                         lines.setLength(0);
                     }
                 }
                 if (lines.length() > 0) {
-                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
-                    raf.seek(seek);
-                    raf.write(lines.toString().getBytes(), 0, lines.toString().getBytes().length);
-                    raf.close();
+                    seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
                     lines.setLength(0);
                 }
                 int result = process.waitFor();
                 if(result!=0){
                     String errLine = "脚本执行异常 错误码"+result;
                     log.warn(errLine);
-                    raf = new RandomAccessFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)).toFile(), "rw");
-                    raf.seek(seek);
-                    raf.write(errLine.getBytes(), 0, errLine.getBytes().length);
-                    raf.close();
+                    seek = writeLine(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)),seek,lines.toString());
                     lines.setLength(0);
                 }
             } catch (IOException | InterruptedException e) {
@@ -138,7 +106,7 @@ public class ShellHandler {
                     result.setOver(true);
                 }
             }
-            result.setData(log.toString());
+            result.setData(new String(log.toString().getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
             result.setOffset(raf.getFilePointer());
         } catch (IOException e) {
             log.warn(e.getMessage());
@@ -152,5 +120,15 @@ public class ShellHandler {
             }
         }
         return result;
+    }
+
+
+    public Long writeLine(Path path,Long seek,String line) throws IOException {
+        RandomAccessFile raf = new RandomAccessFile(path.toFile(), "rw");
+        raf.seek(seek);
+        raf.write(line.getBytes(), 0, line.getBytes().length);
+        seek += line.getBytes().length;
+        raf.close();
+        return seek;
     }
 }
