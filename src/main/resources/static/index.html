@@ -9,7 +9,7 @@
 <div id="app">
     <el-row :gutter="20">
         <el-col :span="10">
-            <el-form label-width="80px" :model="startRequestParam">
+            <el-form :model="startRequestParam" label-position="right">
                 <el-form-item label="项目地址">
                     <el-input v-model="startRequestParam.url"></el-input>
                 </el-form-item>
@@ -19,7 +19,7 @@
                 <el-form-item label="应用">
                     <el-input v-model="startRequestParam.project"></el-input>
                 </el-form-item>
-                <el-form-item label="是否根路径为pom模块发布">
+                <el-form-item label="pom是否在根路径" >
                     <el-switch v-model="startRequestParam.rootProject"></el-switch>
                 </el-form-item>
                 <el-button type="primary" @click="deploy">发布</el-button>
