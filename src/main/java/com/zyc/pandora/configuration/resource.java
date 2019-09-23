@@ -18,7 +18,7 @@ public class resource  extends WebMvcConfigurerAdapter {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler(basePath).addResourceLocations(basePath);
+        registry.addResourceHandler(basePath+"**").addResourceLocations(basePath);
         super.addResourceHandlers(registry);
     }
 }
