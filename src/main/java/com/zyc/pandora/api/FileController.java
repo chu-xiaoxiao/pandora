@@ -37,7 +37,12 @@ public class FileController {
         if (file.isEmpty()) {
             return CommonResponse.Builder.FAIL().initErrMsg("上传失败 文件为空");
         }
-        String fileName = String.format("%s_%s_%s_%s",Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DAY_OF_MONTH),UUID.randomUUID().toString().replaceAll("\\-",""));;
+        String fileName = String.format("%s_%s_%s_%s.%s",
+                Calendar.getInstance().get(Calendar.YEAR),
+                Calendar.getInstance().get(Calendar.MONTH),
+                Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
+                UUID.randomUUID().toString().replaceAll("\\-","")
+                ,file.getName().split("\\.")[file.getName().split("\\.").length-1]);
         String filePath = fileBasePath;
         File dest = new File(filePath + fileName);
         try {
