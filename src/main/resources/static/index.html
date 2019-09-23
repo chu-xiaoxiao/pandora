@@ -19,7 +19,7 @@
                 <el-form-item label="应用">
                     <el-input v-model="startRequestParam.project"></el-input>
                 </el-form-item>
-                <el-form-item label="pom是否在根路径" >
+                <el-form-item label="是否根路径运行" >
                     <el-switch v-model="startRequestParam.rootProject"></el-switch>
                 </el-form-item>
                 <el-button type="primary" @click="deploy">发布</el-button>
