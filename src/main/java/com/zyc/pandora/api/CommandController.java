@@ -40,9 +40,8 @@ public class CommandController {
             shellHandler.runShell(runShellFile,startRequestParam.getProject());
             return  CommonResponse.Builder.SUCC().initSuccMsg("启动脚本执行成功");
         } catch (IOException e) {
-            e.printStackTrace();
+            return CommonResponse.Builder.FAIL().initErrMsg("启动脚本执行失败"+e.getMessage());
         }
-        return  CommonResponse.Builder.FAIL().initErrMsg("启动脚本执行失败");
     }
 
     @RequestMapping(value = "/log",method = RequestMethod.GET)

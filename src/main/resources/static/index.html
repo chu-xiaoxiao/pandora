@@ -82,7 +82,6 @@
                     .then(function c(response) {
                         if (response.data.code == 0) {
                             that.success(response.data.message);
-                            console.log("启动定制器1");
                             that.startLog()
                         } else {
                             that.error(response.data.message);
@@ -116,7 +115,6 @@
                     });
             },
             startLog: function () {
-                console.log("启动定制器");
                 this.logParam.offset = 0;
                 this.logParam.type = "packageLog";
                 this.logParam.project = this.startRequestParam.project;
