@@ -30,10 +30,13 @@ public class FileController {
 
     @RequestMapping(value = "/upload",method = RequestMethod.POST)
     public CommonResponse upload(@RequestParam("file") MultipartFile file){
+        File file1 = new File(fileBasePath);
+        if(!file1.exists()){
+            file1.mkdirs();
+        }
         if (file.isEmpty()) {
             return CommonResponse.Builder.FAIL().initErrMsg("上传失败 文件为空");
         }
-
         String fileName = String.format("%s_%s_%s_%s",Calendar.getInstance().get(Calendar.YEAR),Calendar.getInstance().get(Calendar.MONTH),Calendar.getInstance().get(Calendar.DAY_OF_MONTH),UUID.randomUUID().toString().replaceAll("\\-",""));;
         String filePath = fileBasePath;
         File dest = new File(filePath + fileName);
