@@ -38,8 +38,9 @@ public class CommandController {
         try {
             File runShellFile  =  shellHandler.createShellFile("runShell", startRequestParam.getProject(),ShellEnum.runShell, JSONObject.parseObject(JSONObject.toJSONString(startRequestParam)));
             shellHandler.runShell(runShellFile,startRequestParam.getProject());
+            ///shellHandler.checkHealth(startRequestParam.getProject(),startRequestParam.getCheckHealthUrl());
             return  CommonResponse.Builder.SUCC().initSuccMsg("启动脚本执行成功");
-        } catch (IOException e) {
+        } catch (Exception e) {
             return CommonResponse.Builder.FAIL().initErrMsg("启动脚本执行失败"+e.getMessage());
         }
     }

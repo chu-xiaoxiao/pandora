@@ -3,10 +3,12 @@ package com.zyc.pandora.shell;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.pandora.domain.dto.LogParam;
 import com.zyc.pandora.domain.dto.RangeLog;
+import com.zyc.pandora.httpclient.HttpUtils;
 import com.zyc.pandora.shell.dto.LogFile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +31,8 @@ public class ShellHandler {
     private String projectPath;
     @Value("${project.log.buffer}")
     private Integer logBuffer;
+    @Value("${project.log.checkHealthCount}")
+    private Integer checkHealthCount;
 
     public List<String> getProjectBranch(String url) {
         return null;
@@ -78,6 +82,25 @@ public class ShellHandler {
             }
             return true;
         });
+    }
+
+
+    public void checkHealth(String project,String checkHealthUrl) throws Exception {
+        LogFile logFile = new LogFile(Paths.get(String.format("/%s/%s/packageLog.log", projectPath, project)));
+        if(StringUtils.isEmpty(checkHealthUrl)){
+            logFile.appendLine("未填写探活地址 不进行探活操作");
+            return;
+        }
+        Integer count = 0;
+        while(HttpUtils.doPost("http://localhost/"+checkHealthUrl).getCode()!=200&&count<checkHealthCount){
+            Thread.sleep(1000);
+            logFile.appendLine("探活中");
+        }
+        if(count>=checkHealthCount){
+            logFile.appendLine("探活失败 项目启动超时");
+        }else {
+            logFile.appendLine("项目启动成功");
+        }
     }
 
     public RangeLog readLog(LogParam logParam) {

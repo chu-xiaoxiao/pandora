@@ -12,4 +12,5 @@ public class StartRequestParam {
     private String branch;
     private String project;
     private boolean rootProject;
+    private String checkHealthUrl;
 }

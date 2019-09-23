@@ -19,6 +19,9 @@
                 <el-form-item label="应用">
                     <el-input v-model="startRequestParam.project"></el-input>
                 </el-form-item>
+                <!--<el-form-item label="探活地址" >
+                    <el-input v-model="startRequestParam.checkHealthUrl"></el-input>
+                </el-form-item>-->
                 <el-form-item label="是否根路径运行" >
                     <el-switch v-model="startRequestParam.rootProject"></el-switch>
                 </el-form-item>
@@ -48,6 +51,7 @@
                 branch: null,
                 project: null,
                 rootProject:null,
+                checkHealthUrl:null,
             },
             logParam: {
                 type: null,
