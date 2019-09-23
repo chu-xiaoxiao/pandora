@@ -42,7 +42,7 @@ public class FileController {
                 Calendar.getInstance().get(Calendar.MONTH),
                 Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
                 UUID.randomUUID().toString().replaceAll("\\-","")
-                ,file.getName().split("\\.")[file.getName().split("\\.").length-1]);
+                ,file.getOriginalFilename().split("\\.")[file.getOriginalFilename().split("\\.").length-1]);
         String filePath = fileBasePath;
         File dest = new File(filePath + fileName);
         try {
