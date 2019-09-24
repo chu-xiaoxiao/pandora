@@ -32,7 +32,7 @@ public class FileController {
     public CommonResponse upload(@RequestParam("file") MultipartFile file){
         String dataPath = String.format("%s_%s_%s/",
                 Calendar.getInstance().get(Calendar.YEAR),
-                Calendar.getInstance().get(Calendar.MONTH),
+                Calendar.getInstance().get(Calendar.MONTH+1),
                 Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
         File imgPath = new File(fileBasePath+dataPath);
         if(!imgPath.exists()){
@@ -45,7 +45,7 @@ public class FileController {
         String fileName = String.format("%s.%s",
                 UUID.randomUUID().toString().replaceAll("\\-","")
                 ,file.getOriginalFilename().split("\\.")[file.getOriginalFilename().split("\\.").length-1]);
-        File dest = new File(imgPath + fileName);
+        File dest = new File(imgPath,fileName);
         try {
             file.transferTo(dest);
             log.info("上传成功");
