@@ -45,12 +45,11 @@ public class FileController {
         String fileName = String.format("%s.%s",
                 UUID.randomUUID().toString().replaceAll("\\-","")
                 ,file.getOriginalFilename().split("\\.")[file.getOriginalFilename().split("\\.").length-1]);
-        String filePath = fileBasePath;
         File dest = new File(imgPath + fileName);
         try {
             file.transferTo(dest);
             log.info("上传成功");
-            return CommonResponse.Builder.SUCC().initSuccData(fileIP+filePath+fileName);
+            return CommonResponse.Builder.SUCC().initSuccData(fileIP+imgPath+fileName);
         } catch (IOException e) {
             log.error(e.toString(), e);
         }
