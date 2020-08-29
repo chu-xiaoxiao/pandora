@@ -38,7 +38,7 @@ public enum ShellEnum {
                                     "mvn install\n" +
                                     "mvn package\n" +
                                     "cd target\n" +
-                                    "nohup java -jar *.jar >>$logpath 2>&1 &", param);
+                                    "nohup java -jar --spring.profiles.active=#{profiles} *.jar >>$logpath 2>&1 &", param);
             return shell;
         }
     };

@@ -13,4 +13,5 @@ public class StartRequestParam {
     private String project;
     private boolean rootProject;
     private String checkHealthUrl;
+    private String profiles;
 }
