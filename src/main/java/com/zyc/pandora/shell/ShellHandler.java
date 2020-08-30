@@ -43,6 +43,9 @@ public class ShellHandler {
         File appDir = appPath.toFile();
         if (!appDir.exists()) {
             Files.createDirectories(appPath);
+        }else{
+            Files.delete(appPath);
+            Files.createDirectories(appPath);
         }
         Path shellPath = Paths.get(String.format("%s/%s_%s.sh", projectPath, workPath, fileName));
         File shellFile = shellPath.toFile();
